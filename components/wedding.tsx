@@ -242,11 +242,7 @@ export function MusicControl({
       aria-label={muted ? 'Play music' : 'Pause music'}
       title={muted ? 'Play music' : 'Pause music'}
     >
-      {muted ? <Volume2 size={16} /> : <VolumeX size={16} />}
-
-      <span className="text-xs uppercase tracking-[0.1em]">
-        {muted ? 'Play' : 'Pause'}
-      </span>
+      {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
     </button>
   )
 }
