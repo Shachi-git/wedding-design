@@ -523,11 +523,21 @@ export function FAQAccordion() {
   )
 }
 
+
 export function IntroAnimation({ onEnter }: { onEnter: () => void }) {
   const [show, setShow] = useState(true)
 
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setShow(false)
+      onEnter()
+    }, 10000)
+
+    return () => window.clearTimeout(id)
+  }, [onEnter])
+
   const enter = () => {
-    // Start music only from the Enter Invitation button
+    // Music starts only when the user clicks Enter Invitation
     window.dispatchEvent(new Event('wedding:play'))
 
     setShow(false)
@@ -537,7 +547,7 @@ export function IntroAnimation({ onEnter }: { onEnter: () => void }) {
   if (!show) return null
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-[#211f1b] bg-[radial-gradient(circle_at_50%_45%,rgba(182,154,107,0.14),transparent_32%)] text-[#eee5d8] animate-intro-out">
+    <div className="fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-[#211f1b] bg-[radial-gradient(circle_at_50%_45%,rgba(182,154,107,0.14),transparent_32%)] text-[#eee5d8]">
       <div className="pointer-events-none absolute left-[8%] top-[18%] size-[35vw] rounded-full bg-[rgba(182,154,107,0.08)] blur-[60px] animate-glow-drift" />
 
       <div className="pointer-events-none absolute bottom-[8%] right-[10%] size-[30vw] rounded-full bg-[rgba(244,240,233,0.055)] blur-[60px] animate-glow-drift-reverse" />
@@ -582,6 +592,7 @@ export function IntroAnimation({ onEnter }: { onEnter: () => void }) {
 
         <div className="mt-[35px] flex justify-center gap-[25px] text-[10px] uppercase tracking-[0.2em] text-[#bbae9b] animate-fade-up max-[700px]:flex-col max-[700px]:gap-2.5">
           <span>{wedding.date}</span>
+
           <span>
             {wedding.venue} · {wedding.city}
           </span>
