@@ -181,23 +181,12 @@ export function WeddingAudio() {
       setMuted(true)
     }
 
-    const unlockOnInteraction = () => {
-      audio.muted = false
-      audio.play().then(() => setMuted(false)).catch(() => {})
-    }
-
     window.addEventListener('wedding:play', play)
     window.addEventListener('wedding:pause', pause)
-    // Browsers block audio-with-sound until the user interacts once.
-    // This catches the first click/tap/keypress anywhere as a fallback.
-    window.addEventListener('pointerdown', unlockOnInteraction, { once: true })
-    window.addEventListener('keydown', unlockOnInteraction, { once: true })
 
     return () => {
       window.removeEventListener('wedding:play', play)
       window.removeEventListener('wedding:pause', pause)
-      window.removeEventListener('pointerdown', unlockOnInteraction)
-      window.removeEventListener('keydown', unlockOnInteraction)
     }
   }, [])
 
@@ -212,28 +201,56 @@ export function WeddingAudio() {
   )
 }
 
-export function MusicControl() {
-  const [muted, setMuted] = useState(false)
+export function MusicControl({
+  variant = 'default',
+}: {
+  variant?: 'default' | 'home'
+}) {
+  const [muted, setMuted] = useState(true)
+
+  useEffect(() => {
+    const handlePlay = () => {
+      setMuted(false)
+    }
+
+    const handlePause = () => {
+      setMuted(true)
+    }
+
+    window.addEventListener('wedding:play', handlePlay)
+    window.addEventListener('wedding:pause', handlePause)
+
+    return () => {
+      window.removeEventListener('wedding:play', handlePlay)
+      window.removeEventListener('wedding:pause', handlePause)
+    }
+  }, [])
 
   const toggle = () => {
-    const nextMuted = !muted
-    setMuted(nextMuted)
-    window.dispatchEvent(
-      new Event(nextMuted ? 'wedding:pause' : 'wedding:play'),
-    )
+    if (muted) {
+      window.dispatchEvent(new Event('wedding:play'))
+    } else {
+      window.dispatchEvent(new Event('wedding:pause'))
+    }
   }
 
   return (
     <button
-      className="fixed bottom-[25px] right-7 z-[60] grid size-10 place-items-center rounded-full border border-[rgba(182,154,107,0.7)] bg-[rgba(244,240,233,0.78)] text-ink backdrop-blur-[10px] hover:bg-[rgba(255,250,242,0.94)] max-[700px]:bottom-[18px] max-[700px]:right-[18px]"
+      type="button"
+      className="fixed bottom-[25px] right-7 z-[60] flex items-center gap-2 rounded-full border border-[rgba(182,154,107,0.7)] bg-[rgba(244,240,233,0.78)] px-4 py-2 text-sm text-ink backdrop-blur-[10px] hover:bg-[rgba(255,250,242,0.94)] max-[700px]:bottom-[18px] max-[700px]:right-[18px]"
       onClick={toggle}
-      aria-label={muted ? 'Turn music on' : 'Turn music off'}
-      title={muted ? 'Turn music on' : 'Turn music off'}
+      aria-label={muted ? 'Play music' : 'Pause music'}
+      title={muted ? 'Play music' : 'Pause music'}
     >
-      {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+      {muted ? <Volume2 size={16} /> : <VolumeX size={16} />}
+
+      <span className="text-xs uppercase tracking-[0.1em]">
+        {muted ? 'Play' : 'Pause'}
+      </span>
     </button>
   )
 }
+
 
 export function Countdown() {
   const [time, setTime] = useState({ d: 0, h: 0, m: 0, s: 0 })
@@ -509,40 +526,37 @@ export function FAQAccordion() {
 export function IntroAnimation({ onEnter }: { onEnter: () => void }) {
   const [show, setShow] = useState(true)
 
-useEffect(() => {
-  // Remove this line:
-  // window.dispatchEvent(new Event('wedding:play'))
-  
-  const id = window.setTimeout(() => {
-    setShow(false)
-    onEnter()
-  }, 10000)
+  const enter = () => {
+    // Start music only from the Enter Invitation button
+    window.dispatchEvent(new Event('wedding:play'))
 
-  return () => window.clearTimeout(id)
-}, [onEnter])
-
-  if (!show) return null
-
-  const skip = () => {
     setShow(false)
     onEnter()
   }
 
+  if (!show) return null
+
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center overflow-hidden bg-[#211f1b] bg-[radial-gradient(circle_at_50%_45%,rgba(182,154,107,0.14),transparent_32%)] text-[#eee5d8] animate-intro-out">
       <div className="pointer-events-none absolute left-[8%] top-[18%] size-[35vw] rounded-full bg-[rgba(182,154,107,0.08)] blur-[60px] animate-glow-drift" />
+
       <div className="pointer-events-none absolute bottom-[8%] right-[10%] size-[30vw] rounded-full bg-[rgba(244,240,233,0.055)] blur-[60px] animate-glow-drift-reverse" />
 
-      <div className="pointer-events-none absolute inset-0 z-[2] overflow-hidden" aria-hidden="true">
+      <div
+        className="pointer-events-none absolute inset-0 z-[2] overflow-hidden"
+        aria-hidden="true"
+      >
         {Array.from({ length: 18 }).map((_, i) => (
           <span
             key={i}
             className="absolute top-[-40px] left-[var(--left)] size-[9px] rounded-[80%_20%_80%_20%] border border-[rgba(230,211,181,0.32)] bg-[rgba(222,195,153,0.13)] opacity-0 blur-[0.2px] animate-petal-fall"
-            style={{
-              '--delay': `${(i % 6) * 0.55}s`,
-              '--left': `${(i * 17) % 100}%`,
-              '--duration': `${6 + (i % 5)}s`,
-            } as React.CSSProperties}
+            style={
+              {
+                '--delay': `${(i % 6) * 0.55}s`,
+                '--left': `${(i * 17) % 100}%`,
+                '--duration': `${6 + (i % 5)}s`,
+              } as React.CSSProperties
+            }
           />
         ))}
       </div>
@@ -550,11 +564,17 @@ useEffect(() => {
       <div className="relative z-[3] w-[min(90vw,900px)] text-center animate-intro-rise">
         <div className="mb-[30px] flex items-center justify-center gap-[15px] text-gold-soft">
           <span className="h-px w-[70px] bg-[linear-gradient(90deg,transparent,rgba(216,186,136,0.7))]" />
-          <b className="text-base font-normal animate-twinkle">✦</b>
+
+          <b className="text-base font-normal animate-twinkle">
+            ✦
+          </b>
+
           <span className="h-px w-[70px] bg-[linear-gradient(90deg,rgba(216,186,136,0.7),transparent)]" />
         </div>
 
-        <p className="mb-[25px] text-[10px] uppercase tracking-[0.34em] text-[#cdbb9f] animate-fade-up">You are invited</p>
+        <p className="mb-[25px] text-[10px] uppercase tracking-[0.34em] text-[#cdbb9f] animate-fade-up">
+          You are invited
+        </p>
 
         <h1 className="m-0 font-display text-[clamp(60px,10vw,120px)] font-normal leading-[0.8] tracking-[-0.08em] text-[#f4eadb] animate-title-reveal">
           Emma <i>&amp;</i> Daniel
@@ -562,15 +582,23 @@ useEffect(() => {
 
         <div className="mt-[35px] flex justify-center gap-[25px] text-[10px] uppercase tracking-[0.2em] text-[#bbae9b] animate-fade-up max-[700px]:flex-col max-[700px]:gap-2.5">
           <span>{wedding.date}</span>
-          <span>{wedding.venue} · {wedding.city}</span>
+          <span>
+            {wedding.venue} · {wedding.city}
+          </span>
         </div>
 
-        <p className="mt-[34px] font-display text-[17px] italic text-[#d8c9b5] animate-fade-up max-[700px]:text-[15px]">A day worth remembering.</p>
-      </div>
+        <p className="mt-[34px] font-display text-[17px] italic text-[#d8c9b5] animate-fade-up max-[700px]:text-[15px]">
+          A day worth remembering.
+        </p>
 
-      <button className="absolute bottom-7 right-7 z-[4] border-0 border-b border-[rgba(216,186,136,0.65)] bg-transparent pb-1.5 text-[10px] uppercase tracking-[0.16em] text-[#d3c2aa] max-[700px]:bottom-5 max-[700px]:right-5" onClick={skip}>
-        Skip intro
-      </button>
+        <button
+          type="button"
+          onClick={enter}
+          className="mt-[42px] border border-[rgba(216,186,136,0.65)] bg-[rgba(216,186,136,0.08)] px-[30px] py-[14px] text-[10px] uppercase tracking-[0.22em] text-[#e4d3b8] transition-all duration-300 hover:bg-[rgba(216,186,136,0.18)] hover:text-white"
+        >
+          Enter Invitation
+        </button>
+      </div>
     </div>
   )
 }
