@@ -509,16 +509,17 @@ export function FAQAccordion() {
 export function IntroAnimation({ onEnter }: { onEnter: () => void }) {
   const [show, setShow] = useState(true)
 
-  useEffect(() => {
-    window.dispatchEvent(new Event('wedding:play'))
+useEffect(() => {
+  // Remove this line:
+  // window.dispatchEvent(new Event('wedding:play'))
+  
+  const id = window.setTimeout(() => {
+    setShow(false)
+    onEnter()
+  }, 10000)
 
-    const id = window.setTimeout(() => {
-      setShow(false)
-      onEnter()
-    }, 10000)
-
-    return () => window.clearTimeout(id)
-  }, [onEnter])
+  return () => window.clearTimeout(id)
+}, [onEnter])
 
   if (!show) return null
 
